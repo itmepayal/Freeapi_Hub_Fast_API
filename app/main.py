@@ -3,19 +3,23 @@
 # ==============================
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 # ==============================
-# Database
+# Database Setup
 # ==============================
-from app.core.database import Base, engine
+from app.core.db.connect import Base, engine
 
 # ==============================
-# Routers
+# API Routers
 # ==============================
+# Versioned route modules
+from app.api.v1.health.routes import router as health_router
 from app.api.v1.todo.routes import router as todo_router
+from app.api.v1.auth.routes import router as auth_router
 
 # ==============================
-# Exception Handlers
+# Global Exception Handlers
 # ==============================
 from app.utils.exceptions import (
     http_exception_handler,
@@ -23,27 +27,42 @@ from app.utils.exceptions import (
     generic_exception_handler,
 )
 
+
 # ==============================
-# Create FastAPI App
+# Create FastAPI Application
 # ==============================
 app = FastAPI(
-    title="API Hub",
-    version="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    title="API Hub",            
+    version="1.0.0",            
+    docs_url="/docs",           
+    redoc_url="/redoc",        
+)
+
+# ==============================
+# Enable CORS Middleware
+# ==============================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],        
+    allow_credentials=True,  
+    allow_methods=["*"],       
+    allow_headers=["*"],  
 )
 
 # ==============================
 # Database Initialization
 # ==============================
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     Base.metadata.create_all(bind=engine)
 
 # ==============================
-# Register Routers
+# Register API Routers
 # ==============================
-app.include_router(todo_router)
+
+app.include_router(health_router, prefix="/api/v1/health")
+app.include_router(auth_router, prefix="/api/v1/accounts")
+app.include_router(todo_router, prefix="/api/v1/todos")
 
 # ==============================
 # Register Global Exception Handlers

@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 # Database
 # =====================================
 from sqlalchemy.orm import Session
-from app.core.database import get_db
+from app.core.db.connect import get_db
 
 # =====================================
 # Local Schemas
@@ -44,10 +44,9 @@ from app.utils.response import APIResponse
 # Router Configuration
 # =====================================
 router = APIRouter(
-    prefix="/todos",
+    prefix="",
     tags=["Todos"],
 )
-
 
 # =====================================
 # Create Todo Endpoint
@@ -66,7 +65,6 @@ def create(todo: TodoCreate, db: Session = Depends(get_db)):
         data=todo_obj,
         message="Todo created successfully",
     )
-
 
 # =====================================
 # Get Todo by ID Endpoint
@@ -90,7 +88,6 @@ def read(todo_id: int, db: Session = Depends(get_db)):
         data=todo,
         message="Todo fetched successfully",
     )
-
 
 # =====================================
 # List Todos Endpoint

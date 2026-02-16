@@ -1,16 +1,25 @@
-from fastapi import APIRouter
-from datetime import datetime
-from pydantic import BaseModel
+# =====================================
+# FastAPI / Router Imports
+# =====================================
+from fastapi import APIRouter, status
+from app.utils.response import APIResponse
+import structlog
 
+# =====================================
+# Router
+# =====================================
 router = APIRouter(tags=["Health"])
 
-class HealthResponse(BaseModel):
-    status:str
-    timestamp: str
-
-@router.get("/live", response_model=HealthResponse)
-def live():
-    return HealthResponse(
-        status="alive",
-        timestamp=datetime.utcnow().isoformat()
+# =====================================
+# Health Check Endpoint
+# =====================================
+@router.get("", status_code=status.HTTP_200_OK, summary="Health Check")
+def health_check():
+    """
+    Simple health check endpoint to verify API is running.
+    """
+    return APIResponse(
+        status="success",
+        message="Health check passed",
+        data={"api": "ok"},
     )

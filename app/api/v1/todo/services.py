@@ -1,7 +1,6 @@
 # =====================================
 # Standard Library
 # =====================================
-import logging
 from typing import Optional, Tuple, List
 
 # =====================================
@@ -18,11 +17,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.api.v1.todo.models import Todo
 from app.api.v1.todo.schemas import TodoCreate, TodoUpdate
 
-# =====================================
-# Logger
-# =====================================
-logger = logging.getLogger(__name__)
-
 
 # =====================================
 # Helper — Safe Commit
@@ -33,7 +27,6 @@ def _safe_commit(db: Session):
         db.commit()
     except SQLAlchemyError as e:
         db.rollback()
-        logger.exception("Database commit failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database transaction failed"
@@ -54,7 +47,6 @@ def create_todo(db: Session, data: TodoCreate) -> Todo:
         return todo
 
     except SQLAlchemyError as e:
-        logger.exception("Create todo failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create todo"
@@ -76,7 +68,6 @@ def get_todo(db: Session, todo_id: int) -> Optional[Todo]:
         )
 
     except SQLAlchemyError as e:
-        logger.exception("Get todo query failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch todo"
@@ -97,7 +88,6 @@ def list_todos(
     try:
         query = db.query(Todo).filter(Todo.is_deleted == False)
 
-        # Search filter
         if search:
             query = query.filter(
                 or_(
@@ -106,7 +96,6 @@ def list_todos(
                 )
             )
 
-        # Status filter
         if status:
             query = query.filter(Todo.status == status)
 
@@ -122,7 +111,6 @@ def list_todos(
         return items, total
 
     except SQLAlchemyError as e:
-        logger.exception("List todos query failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list todos"
@@ -145,7 +133,6 @@ def update_todo(db: Session, todo: Todo, data: TodoUpdate) -> Todo:
         return todo
 
     except SQLAlchemyError as e:
-        logger.exception("Update todo failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update todo"
@@ -161,7 +148,6 @@ def soft_delete_todo(db: Session, todo: Todo) -> None:
         _safe_commit(db)
 
     except SQLAlchemyError as e:
-        logger.exception("Soft delete failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete todo"
