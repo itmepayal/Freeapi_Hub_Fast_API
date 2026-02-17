@@ -12,6 +12,11 @@ from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 
 # =====================================
+# Logger
+# =====================================
+from app.core.logger.logging import logger
+
+# =====================================
 # Local Imports
 # =====================================
 from app.api.v1.todo.models import Todo
@@ -22,11 +27,14 @@ from app.api.v1.todo.schemas import TodoCreate, TodoUpdate
 # Helper — Safe Commit
 # =====================================
 def _safe_commit(db: Session):
-    """Commit with rollback safety"""
     try:
         db.commit()
+        logger.debug("DB commit successful")
+
     except SQLAlchemyError as e:
         db.rollback()
+        logger.warning("DB commit failed — rolled back")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database transaction failed"
@@ -37,6 +45,8 @@ def _safe_commit(db: Session):
 # Create Todo
 # =====================================
 def create_todo(db: Session, data: TodoCreate) -> Todo:
+    logger.info("Creating todo")
+    
     try:
         todo = Todo(**data.model_dump())
 
@@ -44,9 +54,12 @@ def create_todo(db: Session, data: TodoCreate) -> Todo:
         _safe_commit(db)
         db.refresh(todo)
 
+        logger.info(f"Todo created: {todo.id}")
         return todo
 
     except SQLAlchemyError as e:
+        logger.warning("Create todo failed")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create todo"
@@ -56,7 +69,9 @@ def create_todo(db: Session, data: TodoCreate) -> Todo:
 # =====================================
 # Get Single Todo
 # =====================================
-def get_todo(db: Session, todo_id: int) -> Optional[Todo]:
+def get_todo(db: Session, todo_id) -> Optional[Todo]:
+    logger.debug(f"Fetching todo {todo_id}")
+
     try:
         return (
             db.query(Todo)
@@ -68,6 +83,8 @@ def get_todo(db: Session, todo_id: int) -> Optional[Todo]:
         )
 
     except SQLAlchemyError as e:
+        logger.warning("Fetch todo failed")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch todo"
@@ -75,7 +92,7 @@ def get_todo(db: Session, todo_id: int) -> Optional[Todo]:
 
 
 # =====================================
-# List Todos with Search + Filter
+# List Todos
 # =====================================
 def list_todos(
     db: Session,
@@ -84,6 +101,10 @@ def list_todos(
     skip: int = 0,
     limit: int = 10,
 ) -> Tuple[List[Todo], int]:
+
+    logger.debug(
+        f"Listing todos | search={search} status={status} skip={skip} limit={limit}"
+    )
 
     try:
         query = db.query(Todo).filter(Todo.is_deleted == False)
@@ -108,9 +129,12 @@ def list_todos(
             .all()
         )
 
+        logger.debug(f"Todos returned: {len(items)} / total={total}")
         return items, total
 
     except SQLAlchemyError as e:
+        logger.warning("List todos failed")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list todos"
@@ -121,6 +145,8 @@ def list_todos(
 # Update Todo
 # =====================================
 def update_todo(db: Session, todo: Todo, data: TodoUpdate) -> Todo:
+    logger.info(f"Updating todo {todo.id}")
+
     try:
         update_data = data.model_dump(exclude_unset=True)
 
@@ -130,9 +156,12 @@ def update_todo(db: Session, todo: Todo, data: TodoUpdate) -> Todo:
         _safe_commit(db)
         db.refresh(todo)
 
+        logger.info(f"Todo updated: {todo.id}")
         return todo
 
     except SQLAlchemyError as e:
+        logger.warning("Update todo failed")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update todo"
@@ -140,14 +169,20 @@ def update_todo(db: Session, todo: Todo, data: TodoUpdate) -> Todo:
 
 
 # =====================================
-# Soft Delete Todo
+# Soft Delete
 # =====================================
 def soft_delete_todo(db: Session, todo: Todo) -> None:
+    logger.info(f"Soft deleting todo {todo.id}")
+
     try:
         todo.is_deleted = True
         _safe_commit(db)
 
+        logger.info(f"Todo soft deleted: {todo.id}")
+
     except SQLAlchemyError as e:
+        logger.warning("Soft delete failed")
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete todo"

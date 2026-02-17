@@ -1,9 +1,19 @@
+import time
+import uuid
+import uvicorn
+import os
+
 # ==============================
 # FastAPI Core Imports
 # ==============================
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+
+# ==============================
+# Logger 
+# ==============================
+from app.core.logger.logging import logger
 
 # ==============================
 # Database Setup
@@ -11,15 +21,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.db.connect import Base, engine
 
 # ==============================
-# API Routers
+# Middleware
 # ==============================
-# Versioned route modules
-from app.api.v1.health.routes import router as health_router
-from app.api.v1.todo.routes import router as todo_router
-from app.api.v1.auth.routes import router as auth_router
+from app.middleware.loggin import loggin_middleware
 
 # ==============================
-# Global Exception Handlers
+# API Routers
+# ==============================
+from app.api.v1.health.routes import router as health_router
+from app.api.v1.todo.routes import router as todo_router
+from app.api.v1.user.routes import router as auth_router
+
+# ==============================
+# Exception Handlers
 # ==============================
 from app.utils.exceptions import (
     http_exception_handler,
@@ -27,46 +41,62 @@ from app.utils.exceptions import (
     generic_exception_handler,
 )
 
-
 # ==============================
-# Create FastAPI Application
+# App
 # ==============================
 app = FastAPI(
-    title="API Hub",            
-    version="1.0.0",            
-    docs_url="/docs",           
-    redoc_url="/redoc",        
+    title="API Hub",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 # ==============================
-# Enable CORS Middleware
+# Logging Middleware
+# ==============================
+app.middleware("http")(loggin_middleware)
+
+# ==============================
+# CORS
 # ==============================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],        
-    allow_credentials=True,  
-    allow_methods=["*"],       
-    allow_headers=["*"],  
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ==============================
-# Database Initialization
+# DB Init (dev only)
 # ==============================
 @app.on_event("startup")
 async def on_startup():
-    Base.metadata.create_all(bind=engine)
+    if os.getenv("ENV", "dev") == "dev":
+        Base.metadata.create_all(bind=engine)
 
 # ==============================
-# Register API Routers
+# Routers
 # ==============================
-
 app.include_router(health_router, prefix="/api/v1/health")
-app.include_router(auth_router, prefix="/api/v1/accounts")
 app.include_router(todo_router, prefix="/api/v1/todos")
+app.include_router(auth_router, prefix="/api/v1/accounts")
 
 # ==============================
-# Register Global Exception Handlers
+# Exception Handlers
 # ==============================
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
+
+# ==============================
+# Run
+# ==============================
+if __name__ == "__main__":
+    uvicorn.run(
+        "app:main",
+        host="127.0.0.1",
+        port=8000,
+        reload=True,
+        log_config=None,
+    )

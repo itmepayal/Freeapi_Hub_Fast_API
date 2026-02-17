@@ -37,7 +37,7 @@ class Todo(Base, TimestampMixin):
     __table_args__ = (
         Index("idx_todo_status", "status"),
         Index("idx_todo_created", "created_at"),
-        Index("idx_todo_user", "user_id"),
+        # Index("idx_todo_user", "user_id"),
     )
 
     # ---------------------------------
@@ -48,11 +48,11 @@ class Todo(Base, TimestampMixin):
     # ---------------------------------
     # Foreign Keys
     # ---------------------------------
-    user_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False
-    )
+    # user_id = Column(
+    #     UUID(as_uuid=True),
+    #     ForeignKey("users.id", ondelete="CASCADE"),
+    #     nullable=False
+    # )
 
     # ---------------------------------
     # Core Fields
@@ -86,4 +86,4 @@ class Todo(Base, TimestampMixin):
     # ---------------------------------
     # Relationships
     # ---------------------------------
-    owner = relationship("User", back_populates="todos")
+    # owner = relationship("User", back_populates="todos")

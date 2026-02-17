@@ -1,6 +1,7 @@
 # =====================================
 # Standard Library
 # =====================================
+from uuid import UUID
 from datetime import datetime
 from typing import Optional
 
@@ -71,7 +72,7 @@ class TodoUpdate(BaseModel):
 # Response Schema
 # =====================================
 class TodoOut(TodoBase):
-    id: int
+    id: UUID
     is_completed: bool
     created_at: datetime
     updated_at: datetime
