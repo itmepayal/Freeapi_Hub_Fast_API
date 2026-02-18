@@ -80,7 +80,7 @@ async def on_startup():
 # ==============================
 app.include_router(health_router, prefix="/api/v1/health")
 app.include_router(todo_router, prefix="/api/v1/todos")
-app.include_router(auth_router, prefix="/api/v1/accounts")
+app.include_router(auth_router, prefix="/api/v1/users")
 
 # ==============================
 # Exception Handlers

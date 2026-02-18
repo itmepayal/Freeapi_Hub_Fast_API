@@ -13,7 +13,7 @@ class User(Base, TimestampMixin):
     email = Column(String, unique=True, nullable=False, index=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
-    role = Column(String, default="USER")
+    role = Column(String, default="ADMIN")
     is_email_verified = Column(Boolean, default=False)
     refresh_token = Column(String, nullable=True)
     forgot_password_token = Column(String, nullable=True)
