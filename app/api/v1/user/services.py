@@ -5,6 +5,7 @@ import hashlib
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
+from starlette.responses import RedirectResponse
 
 # =====================================
 # Standard Library
@@ -39,11 +40,10 @@ from jose import jwt, JWTError
 from app.core.config.config import settings
 from app.core.db.connect import get_db
 
-
 # =====================================
 # OAuth2 Bearer Token Extractor
 # =====================================
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/accounts/login")  
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")  
 
 # =====================================
 # Create User Service
@@ -387,3 +387,90 @@ def assign_role_service(
     db.refresh(user)
 
     return {"message": f"Role '{new_role}' assigned to user '{user.username}' successfully."}
+
+# =====================================
+# GOOGLE SERVICE
+# =====================================
+async def handle_google_callback(request, db: Session, oauth):
+
+    token = await oauth.google.authorize_access_token(request)
+    user_info = token.get("userinfo")
+
+    if not user_info:
+        raise HTTPException(status_code=400, detail="Google user info not found")
+
+    email = user_info["email"]
+    username = user_info.get("name") or email.split("@")[0]
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        user = User(
+            email=email,
+            username=username,
+            password=None,
+            auth_provider="google",
+            is_email_verified=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return _generate_login_response(user, db)
+
+
+# =====================================
+# GITHUB SERVICE
+# =====================================
+async def handle_github_callback(request, db: Session, oauth):
+
+    token = await oauth.github.authorize_access_token(request)
+
+    profile_resp = await oauth.github.get("user", token=token)
+    profile = profile_resp.json()
+
+    email_resp = await oauth.github.get("user/emails", token=token)
+    emails = email_resp.json()
+
+    primary_email = None
+    for e in emails:
+        if e.get("primary") and e.get("verified"):
+            primary_email = e.get("email")
+            break
+
+    if not primary_email:
+        raise HTTPException(status_code=400, detail="GitHub email not available")
+
+    username = profile.get("name") or profile.get("login")
+
+    user = db.query(User).filter(User.email == primary_email).first()
+
+    if not user:
+        user = User(
+            email=primary_email,
+            username=username,
+            password=None,
+            auth_provider="github",
+            is_email_verified=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+    return _generate_login_response(user, db)
+
+
+# =====================================
+# COMMON TOKEN GENERATOR
+# =====================================
+def _generate_login_response(user: User, db: Session):
+
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    user.refresh_token = refresh_token
+    db.commit()
+
+    return RedirectResponse(
+        url=f"{settings.FRONTEND_URL}/social-success?access_token={access_token}"
+    )

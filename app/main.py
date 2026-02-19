@@ -9,6 +9,7 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 
 # ==============================
 # Logger 
@@ -42,18 +43,27 @@ from app.utils.exceptions import (
 )
 
 # ==============================
+# Core Utilities
+# ==============================
+from app.core.config.config import settings
+
+# ==============================
 # App
 # ==============================
 app = FastAPI(
     title="API Hub",
     version="1.0.0",
-    docs_url="/docs",
+    docs_url="/",
     redoc_url="/redoc",
 )
 
 # ==============================
 # Logging Middleware
 # ==============================
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SECRET_SESSION_KEY
+)
 app.middleware("http")(loggin_middleware)
 
 # ==============================

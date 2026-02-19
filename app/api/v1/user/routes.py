@@ -1,7 +1,7 @@
 # =====================================
 # FastAPI / SQLAlchemy
 # =====================================
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -31,13 +31,17 @@ from app.api.v1.user.services import (
     forgot_password_service,
     reset_password_service,
     verify_email_service,
-    resend_verification_service
+    resend_verification_service,
+    handle_google_callback,
+    handle_github_callback
 )
+from starlette.responses import RedirectResponse
 
 # =====================================
 # Database
 # =====================================
 from app.core.db.connect import get_db
+from app.core.oauth.oauth import oauth
 
 # =====================================
 # Models
@@ -48,7 +52,7 @@ from app.api.v1.user.models import User
 # Security Utilities
 # =====================================
 from app.core.security.security import create_access_token, create_refresh_token
-
+from app.core.config.config import settings
 
 # =====================================
 # Router Configuration
@@ -94,6 +98,12 @@ def login(
         raise HTTPException(
             status_code=401,
             detail="Incorrect username or password"
+        )
+    
+    if user.auth_provider != "local":
+        raise HTTPException(
+            status_code=400,
+            detail="Please login using Google."
         )
 
     # Generate JWT access token
@@ -233,3 +243,40 @@ def assign_role(
     current_user: User = Depends(me), 
 ):
     return assign_role_service(db, user_id, body.role, current_user)
+
+# =====================================
+# Google Endpoint
+# =====================================
+@router.get("/google")
+async def google_login(request: Request):
+    redirect_uri = request.url_for("google_callback")
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+# =====================================
+# Google Callback Endpoint
+# =====================================
+@router.get("/google/callback")
+async def google_callback(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    return await handle_google_callback(request, db, oauth)
+
+# =====================================
+# GitHub Endpoint
+# =====================================
+@router.get("/github")
+async def github_login(request: Request):
+    redirect_uri = request.url_for("github_callback")
+    return await oauth.github.authorize_redirect(request, redirect_uri)
+
+# =====================================
+# GitHub Endpoint
+# =====================================
+@router.get("/github/callback")
+async def github_callback(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    return await handle_github_callback(request, db, oauth)
+
