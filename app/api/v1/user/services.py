@@ -113,6 +113,37 @@ def authenticate_user(db: Session, username: str, password: str) -> User | None:
     return user
 
 # =====================================
+# Login User
+# =====================================
+def login_user(db: Session, username: str, password: str):
+
+    user = authenticate_user(db, username, password)
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect username or password"
+        )
+
+    if user.auth_provider != "local":
+        raise HTTPException(
+            status_code=400,
+            detail="This account is registered via social login."
+        )
+
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    user.refresh_token = refresh_token
+    db.commit()
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+# =====================================
 # Verify Email Service 
 # =====================================
 def verify_email_service(db: Session, token: str):

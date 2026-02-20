@@ -25,6 +25,7 @@ from app.api.v1.user.schemas import (
 # =====================================
 from app.api.v1.user.services import (
     authenticate_user, 
+    login_user,
     create_user, me, 
     refresh_user_token, 
     change_password_service,
@@ -95,50 +96,15 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    # Validate username & password
-    user = authenticate_user(
+    token_data = login_service(
         db,
         form_data.username,
         form_data.password
     )
 
-    # Reject invalid credentials
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password"
-        )
-    
-    if user.auth_provider != "local":
-        raise HTTPException(
-            status_code=400,
-            detail="Please login using Google."
-        )
-
-    # Generate JWT access token
-    access_token = create_access_token({
-        "sub": str(user.id)
-    })
-
-    # Generate JWT refresh token
-    refresh_token = create_refresh_token({
-        "sub": str(user.id)
-    })
-
-    # Store refresh token in database for later validation
-    user.refresh_token = refresh_token
-    db.add(user)
-    db.commit()
-
-    # Return token pair response
-    token_obj ={
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
     return APIResponse(
-        data=token_obj,
-        message="User logged in successfully"
+        data=token_data,
+        message="Login successful"
     )
     
 # =====================================
@@ -159,7 +125,6 @@ def logout(
     db: Session = Depends(get_db)
 ):
     
-    # Remove stored refresh token
     current_user.refresh_token = None
 
     db.add(current_user)
