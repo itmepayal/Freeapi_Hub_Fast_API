@@ -1,5 +1,6 @@
 from passlib.context import CryptContext
 from jose import jwt
+from fastapi import Response
 from datetime import datetime, timedelta
 import secrets
 import hashlib
@@ -33,3 +34,30 @@ def generate_temp_token():
     hashed = hashlib.sha256(un_hashed.encode()).hexdigest()
     expiry = datetime.utcnow() + timedelta(minutes=settings.TEMP_TOKEN_EXPIRE_MINUTES)
     return un_hashed, hashed, expiry
+
+# ---------------- Set Cookies ----------------
+def set_cookies(response: Response, access_token: str, refresh_token: str, secure = False):
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=secure,  
+        samesite="Lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        expires=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=secure,
+        samesite="Lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        expires=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        path="/api/v1/users/refresh"
+    )
+
+# ---------------- Clear Cookies ----------------
+def clear_cookies(response: Response):
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/api/v1/users/refresh")

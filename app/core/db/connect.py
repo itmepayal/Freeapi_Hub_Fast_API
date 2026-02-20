@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 # =====================================
 # Database URL
 # =====================================
-DATABASE_URL = "postgresql://neondb_owner:npg_b6TtHFUXlDA1@ep-bold-brook-aimho1wh-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DATABASE_URL =  "postgresql://neondb_owner:npg_5dgTC4RFbLri@ep-green-wind-aih55vuq-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 # =====================================
 # Engine Creation

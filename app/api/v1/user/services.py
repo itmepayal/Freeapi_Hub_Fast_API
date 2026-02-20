@@ -48,35 +48,34 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
 # =====================================
 # Create User Service
 # =====================================
-def create_user(db:Session, email: str, username:str, password: str):
+def create_user(db: Session, email: str, username: str, password: str):
 
-    # Check for duplicate email
     if db.query(User).filter(User.email == email).first():
-        raise HTTPException(400, "Email already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already exists"
+        )
 
-    # Check for duplicate username
     if db.query(User).filter(User.username == username).first():
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists"
+        )
 
-    # Create user instance
     user = User(email=email, username=username)
-
-    # Hash + set password using model helper
     user.set_password(password)
-    
+
     raw_token, hashed_token, expiry = generate_temp_token()
-    
+
     user.email_verification_token = hashed_token
     user.email_verification_expiry = expiry
 
-
-    # Persist to database
     db.add(user)
     db.commit()
     db.refresh(user)
-    
+
     verify_link = f"{settings.FRONTEND_URL}/verify-email?token={raw_token}"
-    
+
     send_email(
         to_email=user.email,
         template_id=settings.SENDGRID_EMAIL_VERIFICATION_TEMPLATE_ID,
@@ -86,9 +85,7 @@ def create_user(db:Session, email: str, username:str, password: str):
         }
     )
 
-    # Return created user
     return user
-
 
 # =====================================
 # Authenticate User Credentials
@@ -125,20 +122,29 @@ def verify_email_service(db: Session, token: str):
         User.email_verification_token == hashed,
         User.email_verification_expiry > datetime.utcnow()
     ).first()
-    
+
     if not user:
-        raise HTTPException(400, "Invalid or expired verification token")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token"
+        )
 
     if user.is_email_verified:
-        return {"message": "Email already verified"}
-    
+        return {
+            "status": "success",
+            "message": "Email already verified"
+        }
+
     user.is_email_verified = True
     user.email_verification_token = None
     user.email_verification_expiry = None
 
     db.commit()
 
-    return {"message": "Email verified successfully"}
+    return {
+        "status": "success",
+        "message": "Email verified successfully"
+    }
 
 # =====================================
 # Resend Verify Email Service 

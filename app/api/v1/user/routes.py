@@ -55,6 +55,11 @@ from app.core.security.security import create_access_token, create_refresh_token
 from app.core.config.config import settings
 
 # =====================================
+# Response Wrapper
+# =====================================
+from app.utils.response import APIResponse
+
+# =====================================
 # Router Configuration
 # =====================================
 router = APIRouter(
@@ -70,11 +75,16 @@ def register(
     user_data: UserCreate,
     db: Session = Depends(get_db)
 ):
-    return create_user(
+    user_obj = create_user(
         db,
         email=user_data.email,
         username=user_data.username,
         password=user_data.password
+    )
+    
+    return APIResponse(
+        data=user_obj,
+        message="User created successfully",
     )
 
 # =====================================
@@ -85,7 +95,6 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    print(form_data)
     # Validate username & password
     user = authenticate_user(
         db,
@@ -122,13 +131,16 @@ def login(
     db.commit()
 
     # Return token pair response
-    return {
+    token_obj ={
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer"
     }
-
-
+    return APIResponse(
+        data=token_obj,
+        message="User logged in successfully"
+    )
+    
 # =====================================
 # Current User Endpoint
 # =====================================
