@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 from uuid import UUID
 from datetime import datetime
@@ -16,8 +16,9 @@ class UserOut(BaseModel):
     is_email_verified: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 class TokenSchema(BaseModel):
     access_token: str
@@ -37,13 +38,13 @@ class ForgotPasswordRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
-    
+
 class EmailSchema(BaseModel):
     email: EmailStr
     
 class AssignRoleSchema(BaseModel):
     role: str
-
+    
 class LoginRequest(BaseModel):
     username: str
     password: str

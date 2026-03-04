@@ -1,35 +1,30 @@
 # =====================================
 # Standard Library
 # =====================================
-from datetime import datetime
+from datetime import datetime, UTC
 
 # =====================================
 # SQLAlchemy Column Types
 # =====================================
 from sqlalchemy import Column, DateTime, Boolean
 
-
 # =====================================
 # TimestampMixin
 # =====================================
 class TimestampMixin:
-
-    # Timestamp when record is first created
     created_at = Column(
-        DateTime,
-        default=datetime.utcnow,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
         nullable=False
     )
 
-    # Timestamp updated automatically on every update
     updated_at = Column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False
     )
 
-    # Soft delete flag
     is_deleted = Column(
         Boolean,
         default=False,

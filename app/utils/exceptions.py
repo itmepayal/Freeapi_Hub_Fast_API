@@ -41,6 +41,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             status="fail"
         ).dict()
     )
+    
+# =====================================
+# AppException Handler (
+# =====================================
+async def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=APIResponse(
+            message=exc.message,
+            status="fail"
+        ).dict()
+    )
 
 # =====================================
 # Generic Exception Handler

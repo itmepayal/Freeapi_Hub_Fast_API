@@ -7,6 +7,7 @@ from datetime import datetime
 # =====================================
 # SQLAlchemy
 # =====================================
+from sqlalchemy.orm import validates
 from sqlalchemy import (
     Column,
     String,
@@ -25,34 +26,23 @@ from sqlalchemy.dialects.postgresql import UUID
 # =====================================
 from app.core.db.connect import Base
 from app.models.mixins import TimestampMixin
-from app.api.v1.todo.enums import TodoStatus, TodoPriority
-
+from app.api.v1.todos.enums import TodoStatus, TodoPriority
 
 # =====================================
 # Todo Model
 # =====================================
 class Todo(Base, TimestampMixin):
     __tablename__ = "todos"
-
+    
     __table_args__ = (
-        Index("idx_todo_status", "status"),
+        Index("idx_todo_status_deleted", "status", "is_deleted"),
         Index("idx_todo_created", "created_at"),
-        # Index("idx_todo_user", "user_id"),
     )
 
     # ---------------------------------
     # Primary Key
     # ---------------------------------
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
-    # ---------------------------------
-    # Foreign Keys
-    # ---------------------------------
-    # user_id = Column(
-    #     UUID(as_uuid=True),
-    #     ForeignKey("users.id", ondelete="CASCADE"),
-    #     nullable=False
-    # )
 
     # ---------------------------------
     # Core Fields
@@ -75,7 +65,6 @@ class Todo(Base, TimestampMixin):
         nullable=False
     )
 
-    is_completed = Column(Boolean, default=False)
 
     # ---------------------------------
     # Scheduling
@@ -84,6 +73,23 @@ class Todo(Base, TimestampMixin):
     reminder_at = Column(DateTime)
 
     # ---------------------------------
-    # Relationships
+    # Property
     # ---------------------------------
-    # owner = relationship("User", back_populates="todos")
+    @property
+    def is_completed(self) -> bool:
+        return self.status == TodoStatus.completed
+
+    # ---------------------------------
+    # Validation
+    # ---------------------------------
+    @validates("status")
+    def validate_status(self, key, value):
+        if not isinstance(value, TodoStatus):
+            raise ValueError(f"Invalid status: {value}")
+        return value
+
+    @validates("priority")
+    def validate_priority(self, key, value):
+        if not isinstance(value, TodoPriority):
+            raise ValueError(f"Invalid priority: {value}")
+        return value

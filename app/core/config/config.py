@@ -1,4 +1,6 @@
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
+
 
 class Settings(BaseSettings):
     # =============================
@@ -22,7 +24,7 @@ class Settings(BaseSettings):
     # Frontend
     # =============================
     FRONTEND_URL: str
-    
+
     # =============================
     # Google OAuth
     # =============================
@@ -36,14 +38,18 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_ID: str
     GITHUB_CLIENT_SECRET: str
     GITHUB_REDIRECT_URI: str
-    
+
     # =============================
-    # Session Secret 
+    # Session Secret
     # =============================
     SECRET_SESSION_KEY: str
 
-    class Config:
-        env_file = ".env"
+    # ✅ Pydantic v2 style config
+    model_config = ConfigDict(
+        env_file=".env",
+        extra="ignore",
+        case_sensitive=True
+    )
 
 
 settings = Settings()

@@ -8,12 +8,17 @@ from typing import Optional
 # =====================================
 # Third-Party
 # =====================================
-from pydantic import BaseModel, Field, field_validator
+from pydantic import (
+    BaseModel, 
+    Field, 
+    field_validator,
+    ConfigDict
+)
 
 # =====================================
 # Local
 # =====================================
-from app.api.v1.todo.enums import TodoStatus, TodoPriority  
+from app.api.v1.todos.enums import TodoStatus, TodoPriority  
 
 # =====================================
 # Base Schema
@@ -54,7 +59,6 @@ class TodoUpdate(BaseModel):
     status: Optional[TodoStatus] = None
     priority: Optional[TodoPriority] = None
 
-    is_completed: Optional[bool] = None
     due_date: Optional[datetime] = None
     reminder_at: Optional[datetime] = None
     
@@ -77,5 +81,6 @@ class TodoOut(TodoBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )

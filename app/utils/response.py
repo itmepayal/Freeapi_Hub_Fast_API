@@ -1,24 +1,25 @@
 # =====================================
-# Typing Imports
+# Typing
 # =====================================
 from typing import Generic, TypeVar, Optional, Dict, Any
 
 # =====================================
-# Pydantic Imports
+# Pydantic
 # =====================================
-from pydantic import BaseModel
-from pydantic.generics import GenericModel
+from pydantic import BaseModel, ConfigDict
 
-# =====================================
-# Generic Type Variable
-# =====================================
 T = TypeVar("T")
+
 
 # =====================================
 # Standard API Response Wrapper
 # =====================================
-class APIResponse(GenericModel, Generic[T]):
+class APIResponse(BaseModel, Generic[T]):
     status: str = "success"
     message: str
-    data: T | None = None
+    data: Optional[T] = None
     meta: Optional[Dict[str, Any]] = None
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True
+    )

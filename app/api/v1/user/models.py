@@ -1,9 +1,9 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
 from app.core.db.connect import Base
 from app.core.security.security import hash_password
+from app.core.enums.user.user import UserRole, AuthProvider
 from app.models.mixins import TimestampMixin
 
 class User(Base, TimestampMixin):
@@ -13,8 +13,19 @@ class User(Base, TimestampMixin):
     email = Column(String, unique=True, nullable=False, index=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=True)
-    auth_provider = Column(String, default="local")
-    role = Column(String, default="ADMIN")
+    
+    auth_provider = Column(
+        SQLEnum(AuthProvider, name="auth_providers"),
+        default=AuthProvider.LOCAL,
+        nullable=False
+    )
+
+    role = Column(
+        SQLEnum(UserRole, name="user_roles"),
+        default=UserRole.ADMIN,
+        nullable=False
+    )
+
     is_email_verified = Column(Boolean, default=False)
     refresh_token = Column(String, nullable=True)
     forgot_password_token = Column(String, nullable=True)

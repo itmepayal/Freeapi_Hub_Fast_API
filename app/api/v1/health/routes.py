@@ -15,9 +15,6 @@ router = APIRouter(tags=["Health"])
 # =====================================
 @router.get("", status_code=status.HTTP_200_OK, summary="Health Check")
 def health_check():
-    """
-    Simple health check endpoint to verify API is running.
-    """
     return APIResponse(
         status="success",
         message="Health check passed",
